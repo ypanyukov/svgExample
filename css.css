@@ -1,0 +1,43 @@
+* {
+    margin:0;
+    padding:0;
+    position:relative;
+}
+
+body {
+    background-color:rgba(51, 51, 51, 1);
+}
+
+.wrapper {
+    width:1024px;
+    margin:0 auto;
+}
+
+#chart{
+    margin-top:50px;
+}
+
+#chart svg .axis:hover {
+    stroke:#7798bf;
+    stroke-width:3;
+}
+
+#chart svg .point {
+    -webkit-transition:all 2s linear;
+       -moz-transition:all 2s linear;
+        -ms-transition:all 2s linear;
+         -o-transition:all 2s linear;
+            transition:all 2s linear;
+}
+
+#chart svg .point:hover {
+    stroke:#419CEB;
+    stroke-width:3;
+    fill:#fff;
+}
+
+#chart svg .tooltipText {
+    fill:#000;
+    color:#000;
+    font:normal 12px "Lucida Grande", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif;
+}
