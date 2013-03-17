@@ -71,6 +71,9 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
 Chart = function(selector, data, type, config){
     var svg, // svg node
         preventData = data, //temp variable
+        dataMin,
+        dataMax,
+        defaultRandomDataCount = 20,
         //configs
         xStep = 40,
         circleRadius = 5,
@@ -104,13 +107,46 @@ Chart = function(selector, data, type, config){
         params = {
             "xmlns:svg": "http://www.w3.org/2000/svg",
             width: config.width + "px",
-            height: config.height + "px"
+            height: config.height + "px",
+            "class": "chart"
         };
         svg = SVGTools.drawElement("svg", params);
                 
         parentElement.appendChild(svg);
-    }    
+    }
     
+    this.draw = function(){
+        if (typeof preventData != "object")
+            data = this.getRandomData(defaultRandomDataCount);
+        
+        dataMin = Math.min.apply(Math, data); //a simple solution data[0] if u use data.sort() variable
+        dataMax = Math.max.apply(Math, data); //a simple solution data[data.length - 1] if u use data.sort() variable
+                
+        config = (!config) ? { height:minSVGsHeight, width:miminSVGWidth } : config;
+        config.height = (!config.height || config.height < minSVGsHeight) ? minSVGsHeight : config.height;
+        config.width = (!config.width || config.width < miminSVGWidth) ? miminSVGWidth : config.width;
+        config.width = data.length * xStep > config.width - 150 ? data.length * xStep + 150 : config.width;
+        this.config = config;
+        
+        intersectionOfAxes = {x: 50, y: config.height - 50};
+        pointShape = {minX: 50, maxX: config.width - 50, minY: config.height - 50, maxY: 50};        
+        
+        xStep = parseInt((pointShape.maxX - pointShape.minX) / data.length) < 40 ? 40 : parseInt((pointShape.maxX - pointShape.minX) / data.length);        
+        yStep = (pointShape.minY - pointShape.maxY) / (dataMax - dataMin);
+        
+        if (!svg)
+            init();
+            
+        drawArea();
+        drawAxis();
+        drawGrid();
+        drawData();
+        drawTooltip();
+    }
+    
+    drawGrid = function(){
+        
+    }    
     
     drawArea = function(){
         params = {
@@ -135,30 +171,6 @@ Chart = function(selector, data, type, config){
         params = { transform: "translate(0, 0)" };
         dataGrid = SVGTools.drawElement("g", params);
         svg.appendChild(dataGrid);
-    }
-    
-    this.draw = function(){
-        if (typeof preventData != "object")
-            data = this.getRandomData(20);
-                
-        config = (!config) ? { height:minSVGsHeight, width:miminSVGWidth } : config;
-        config.height = (!config.height || config.height < minSVGsHeight) ? minSVGsHeight : config.height;
-        config.width = (!config.width || config.width < miminSVGWidth) ? miminSVGWidth : config.width;
-        config.width = data.length * xStep > config.width - 150 ? data.length * xStep + 150 : config.width;
-        this.config = config;
-        
-        intersectionOfAxes = {x: 50, y: config.height - 50};
-        pointShape = {minX: 50, maxX: config.width - 50, minY: config.height - 50, maxY: 50};        
-        
-        xStep = parseInt((pointShape.maxX - pointShape.minX) / data.length) < 40 ? 40 : parseInt((pointShape.maxX - pointShape.minX) / data.length);
-        
-        if (!svg)
-            init();
-            
-        drawArea();
-        drawAxis();
-        drawData();
-        drawTooltip();
     }
     
     drawTooltip = function(){
@@ -198,11 +210,6 @@ Chart = function(selector, data, type, config){
     }
     
     drawData = function(){
-        
-        dataMin = Math.min.apply(Math, data); //a simple solution data[0] if u use data.sort() variable
-        dataMax = Math.max.apply(Math, data); //a simple solution data[data.length - 1] if u use data.sort() variable
-        
-        yStep = (pointShape.minY - pointShape.maxY) / (dataMax - dataMin);
         
         for (d in data){
             item = data[d];
