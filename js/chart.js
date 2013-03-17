@@ -83,9 +83,10 @@ Chart = function(selector, data, type, config){
         miminSVGWidth = 1000,
         minSVGsHeight = 400,
         axisLineY = 8,
-        axisLineY = 12,
+        axisLineX = 12,
         //configs
         //tooltip config
+        tooltip,
         tooltipSize = {width:100, height:30},
         textintTooltioPosition = {x: 10, y :20},
         tooltipContent,
@@ -116,8 +117,11 @@ Chart = function(selector, data, type, config){
     }
     
     this.draw = function(){
-        if (typeof preventData != "object")
+        if (preventData == "random" || preventData.t == "random"){
+            defaultRandomDataCount = !preventData.c ? defaultRandomDataCount : preventData.c;
             data = this.getRandomData(defaultRandomDataCount);
+        }
+            
         
         dataMin = Math.min.apply(Math, data); //a simple solution data[0] if u use data.sort() variable
         dataMax = Math.max.apply(Math, data); //a simple solution data[data.length - 1] if u use data.sort() variable
@@ -137,18 +141,34 @@ Chart = function(selector, data, type, config){
         if (!svg)
             init();
             
-        drawArea();
-        drawAxis();
-        drawGrid();
-        drawData();
-        drawTooltip();
+        this.drawArea();
+        this.drawAxis();
+        this.drawGrid();
+        this.drawData();
+        this.drawTooltip();
     }
     
-    drawGrid = function(){
+    this.drawGrid = function(){
+        
+        axisLineX = data.length > 10 ? data.length < 20 ? data.length : parseInt(data.length / 2) : axisLineX;
+        
+        stepForAxis = {}
+        stepForAxis.Y = (pointShape.minY - pointShape.maxY) / axisLineY;
+        stepForAxis.X = (pointShape.maxX - pointShape.minX) / axisLineX;
+        
+        for (var f = 0; f <= axisLineY; f++){
+            line = SVGTools.drawLine(intersectionOfAxes.x - 10, intersectionOfAxes.y - f * stepForAxis.Y, config.width - 50, intersectionOfAxes.y - f * stepForAxis.Y, 0.1, defaultLineColor, "grid");
+            svg.appendChild(line);
+        }
+        
+        for (var f = 0; f <= axisLineX; f++){
+            line = SVGTools.drawLine(intersectionOfAxes.x + f * stepForAxis.X, intersectionOfAxes.y + 10, intersectionOfAxes.x + f * stepForAxis.X, 50, 0.1, defaultLineColor, "grid");
+            svg.appendChild(line);
+        }
         
     }    
     
-    drawArea = function(){
+    this.drawArea = function(){
         params = {
             rx: 5,
             ry: 5,
@@ -162,9 +182,9 @@ Chart = function(selector, data, type, config){
         svg.appendChild(area);
     }
     
-    drawAxis = function(){
-        lineY = SVGTools.drawLine(intersectionOfAxes.x, intersectionOfAxes.y + 25, intersectionOfAxes.x, 50, 1, defaultLineColor, "axis");
-        lineX = SVGTools.drawLine(intersectionOfAxes.x - 25, intersectionOfAxes.y, config.width - 50, intersectionOfAxes.y, 1, defaultLineColor, "axis");
+    this.drawAxis = function(){
+        lineY = SVGTools.drawLine(intersectionOfAxes.x, intersectionOfAxes.y + 25, intersectionOfAxes.x, 50, 1, defaultLineColor, "axis y");
+        lineX = SVGTools.drawLine(intersectionOfAxes.x - 25, intersectionOfAxes.y, config.width - 50, intersectionOfAxes.y, 1, defaultLineColor, "axis x");
         svg.appendChild(lineY);
         svg.appendChild(lineX);
         
@@ -173,7 +193,7 @@ Chart = function(selector, data, type, config){
         svg.appendChild(dataGrid);
     }
     
-    drawTooltip = function(){
+    this.drawTooltip = function(){
         params = {
             visibility: "hidden",
         }
@@ -209,7 +229,7 @@ Chart = function(selector, data, type, config){
         text.appendChild(tooltipContent);
     }
     
-    drawData = function(){
+    this.drawData = function(){
         
         for (d in data){
             item = data[d];
