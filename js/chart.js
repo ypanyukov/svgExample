@@ -18,7 +18,7 @@ Tools = { //small class for work with events
     },
     
     getMousePoint: function(element, event){ //mouse point on the element
-        event = event  || window.event;
+        var event = event  || window.event;
         
         if (event.clientX)
             return {x: event.clientX - element.getBoundingClientRect().left, y: event.clientY - element.getBoundingClientRect().top}            
@@ -31,8 +31,10 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     svgNS: 'http://www.w3.org/2000/svg', //uses namespace
     
     drawElement: function(selector, params){ //main method SBGTools's object
-        element = document.createElementNS(this.svgNS, selector);
-        for (p in params){
+        var element = document.createElementNS(this.svgNS, selector),
+            val;
+        
+        for (var p in params){
             val = params[p];
             element.setAttribute(p, val);
         }
@@ -40,9 +42,9 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     },
     
     drawLine: function(x0, y0, x1, y1, strokeWidth, strokeColor, className){
-        className = !className ? "" : className;
-        d = "M " + x0 + " " + y0 + " L " + x1 + " " + y1;
-        params = {
+        var className = !className ? "" : className,
+            d = "M " + x0 + " " + y0 + " L " + x1 + " " + y1;
+        var params = {
             fill: "none",
             d: d,
             stroke: strokeColor,
@@ -54,7 +56,7 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     
     drawCircle: function(x, y, r, stroke, fill, className){
         className = !className ? "" : className;
-        params = {
+        var params = {
             cx: x,
             cy: y,
             r: r,
@@ -70,12 +72,17 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
 
 Chart = function(selector, data, type, config){
     var svg, // svg node
+        parentElement,
+        dataX = [],
+        dataY = [],
         preventData = data, //temp variable
         dataMin,
         dataMax,
         defaultRandomDataCount = 20,
+        params = {},
         //configs
         xStep = 40,
+        yStep,
         circleRadius = 5,
         defaultCircleColor = "#419CEB",
         defaultLineColor = "#000",
@@ -84,10 +91,13 @@ Chart = function(selector, data, type, config){
         minSVGsHeight = 400,
         axisLineY = 8,
         axisLineX = 12,
+        at,
+        area,
+        grid,
         //configs
         //tooltip config
         tooltip,
-        tooltipSize = {width:100, height:30},
+        tooltipSize = {width:120, height:30},
         textintTooltioPosition = {x: 10, y :20},
         tooltipContent,
         tooltipBackground = "rgba(255, 255, 255, 0.85)",
@@ -98,6 +108,8 @@ Chart = function(selector, data, type, config){
         texts = [];
     
     init = function(){ //init function create  svg node object
+        console.log("Start");
+        
         if (!document.querySelector) //https://developer.mozilla.org/ru/docs/DOM/Document.querySelector only msie version < 8 will suffer 
             return false;
         
@@ -117,25 +129,32 @@ Chart = function(selector, data, type, config){
     }
     
     this.draw = function(){
-        if (preventData == "random" || preventData.t == "random"){
+        if (typeof preventData != "object" || preventData.t == "random"){
             defaultRandomDataCount = !preventData.c ? defaultRandomDataCount : preventData.c;
             data = this.getRandomData(defaultRandomDataCount);
         }
-            
         
-        dataMin = Math.min.apply(Math, data); //a simple solution data[0] if u use data.sort() variable
-        dataMax = Math.max.apply(Math, data); //a simple solution data[data.length - 1] if u use data.sort() variable
+        dataY = data.y ? data.y : data;
+        if (!data.x){
+            for(var r = 0; r < dataY.length; r++)
+                dataX.push(r);
+        }
+        else
+            dataX = data.x;
+        
+        dataMin = Math.min.apply(Math, dataY); //a simple solution dataY[0] if u use dataY.sort() variable
+        dataMax = Math.max.apply(Math, dataY); //a simple solution dataY[dataY.length - 1] if u use dataY.sort() variable
                 
         config = (!config) ? { height:minSVGsHeight, width:miminSVGWidth } : config;
         config.height = (!config.height || config.height < minSVGsHeight) ? minSVGsHeight : config.height;
         config.width = (!config.width || config.width < miminSVGWidth) ? miminSVGWidth : config.width;
-        config.width = data.length * xStep > config.width - 150 ? data.length * xStep + 150 : config.width;
+        config.width = dataY.length * xStep > config.width - 150 ? dataY.length * xStep + 150 : config.width;
         this.config = config;
         
         intersectionOfAxes = {x: 50, y: config.height - 50};
         pointShape = {minX: 50, maxX: config.width - 50, minY: config.height - 50, maxY: 50};        
         
-        xStep = parseInt((pointShape.maxX - pointShape.minX) / data.length) < 40 ? 40 : parseInt((pointShape.maxX - pointShape.minX) / data.length);        
+        xStep = parseInt((pointShape.maxX - pointShape.minX) / dataY.length) < 40 ? 40 : parseInt((pointShape.maxX - pointShape.minX) / dataY.length);        
         yStep = (pointShape.minY - pointShape.maxY) / (dataMax - dataMin);
         
         if (!svg)
@@ -149,21 +168,44 @@ Chart = function(selector, data, type, config){
     }
     
     this.drawGrid = function(){
+        var line,
+            text;
+            
+        params = { transform: "translate(0, 0)" };
+        grid = SVGTools.drawElement("g", params);
+        svg.appendChild(grid);
         
-        axisLineX = data.length > 10 ? data.length < 20 ? data.length : parseInt(data.length / 2) : axisLineX;
+        axisLineX = dataY.length > 10 ? dataY.length < 20 ? dataY.length : parseInt(dataY.length / 2) : axisLineX;
         
         stepForAxis = {}
         stepForAxis.Y = (pointShape.minY - pointShape.maxY) / axisLineY;
         stepForAxis.X = (pointShape.maxX - pointShape.minX) / axisLineX;
         
+        stepTextY = parseFloat((dataMax - dataMin) / axisLineY);
+        
         for (var f = 0; f <= axisLineY; f++){
+            params = {
+                x: intersectionOfAxes.x - 30,
+                y: intersectionOfAxes.y + 10 - f * stepForAxis.Y,
+                "class": "axisText",
+                zIndex:1
+                
+            };
+            text = SVGTools.drawElement("text", params);
+            grid.appendChild(text);
+            
+            params = { };
+            at = SVGTools.drawElement("tspan", params);
+            at.textContent = dataMin + f * stepTextY;
+            text.appendChild(at);
+            
             line = SVGTools.drawLine(intersectionOfAxes.x - 10, intersectionOfAxes.y - f * stepForAxis.Y, config.width - 50, intersectionOfAxes.y - f * stepForAxis.Y, 0.1, defaultLineColor, "grid");
-            svg.appendChild(line);
+            grid.appendChild(line);
         }
         
-        for (var f = 0; f <= axisLineX; f++){
+        for (var f = 0; f <= axisLineX; f++){            
             line = SVGTools.drawLine(intersectionOfAxes.x + f * stepForAxis.X, intersectionOfAxes.y + 10, intersectionOfAxes.x + f * stepForAxis.X, 50, 0.1, defaultLineColor, "grid");
-            svg.appendChild(line);
+            grid.appendChild(line);
         }
         
     }    
@@ -183,17 +225,19 @@ Chart = function(selector, data, type, config){
     }
     
     this.drawAxis = function(){
+        var lineX,
+            lineY;
+        
         lineY = SVGTools.drawLine(intersectionOfAxes.x, intersectionOfAxes.y + 25, intersectionOfAxes.x, 50, 1, defaultLineColor, "axis y");
         lineX = SVGTools.drawLine(intersectionOfAxes.x - 25, intersectionOfAxes.y, config.width - 50, intersectionOfAxes.y, 1, defaultLineColor, "axis x");
         svg.appendChild(lineY);
         svg.appendChild(lineX);
-        
-        params = { transform: "translate(0, 0)" };
-        dataGrid = SVGTools.drawElement("g", params);
-        svg.appendChild(dataGrid);
     }
     
     this.drawTooltip = function(){
+        var text,
+            tooltipRect;
+        
         params = {
             visibility: "hidden",
         }
@@ -230,37 +274,28 @@ Chart = function(selector, data, type, config){
     }
     
     this.drawData = function(){
+        var x, y;
         
-        for (d in data){
-            item = data[d];
+        params = { transform: "translate(0, 0)" };
+        dataGrid = SVGTools.drawElement("g", params);
+        svg.appendChild(dataGrid);
+        
+        for (var d in dataY){
+            var item = dataY[d];
             y = pointShape.minY - (item - dataMin) * yStep;
             x = d * xStep + pointShape.minX;
             var point = SVGTools.drawCircle(x, y, circleRadius, defaultCircleColor, defaultCircleColor, "point");            
             points.push(point);
-            texts.push({item: item, d: d});
+            texts.push({item: item, d: dataX[d]});
             dataGrid.appendChild(point);
         }
         
         points.forEach(pointEvent);
     }
-        
-    pointEvent = function(element, index, array) {
-        Tools.addEvent(element, "mousemove", function(e){
-            pos = Tools.getMousePoint(svg, e);
-            tooltip.setAttribute("visibility", "visible");
-            tooltip.setAttribute("transform", "translate(" + (pos.x + 10) + "," + (pos.y - tooltipSize.height) + ")");
-            tooltipContent.textContent = "x: " + texts[index].item + " y: " + texts[index].d;
-        });
-        
-        Tools.addEvent(element, "mouseout", function(e){
-            tooltip.setAttribute("visibility", "hidden");
-            tooltipContent.textContent = "";
-        });
-    }
     
     this.newData = function(x){
-        data.push(x);
-        d = data.length - 1;
+        dataY.push(x);
+        var d = dataY.length - 1;
         
         item = x;
         y = pointShape.minY - (item - dataMin) * yStep;
@@ -287,8 +322,24 @@ Chart = function(selector, data, type, config){
             }
         }, 10);
     }
+        
+    pointEvent = function(element, index, array) {
+        Tools.addEvent(element, "mousemove", function(e){
+            pos = Tools.getMousePoint(svg, e);
+            tooltip.setAttribute("visibility", "visible");
+            tooltip.setAttribute("transform", "translate(" + (pos.x + 10) + "," + (pos.y - tooltipSize.height) + ")");
+            tooltipContent.textContent = "x: " + texts[index].item + " y: " + texts[index].d;
+        });
+        
+        Tools.addEvent(element, "mouseout", function(e){
+            tooltip.setAttribute("visibility", "hidden");
+            tooltipContent.textContent = "";
+        });
+    }
     
     this.getRandomData = function(count){
+        var rX;
+        
         count = (!count) ? 10 : count;
         data = [];
         
@@ -297,7 +348,7 @@ Chart = function(selector, data, type, config){
             data.push(rX);
         }
         
-        return data
+        return {y:data};
     }
     
     this.draw();
