@@ -214,21 +214,21 @@ Chart = function(selector, data, type, config){
             dataGrid.appendChild(point);
         }
         
-        pointEvent = function(element, index, array) {
-            Tools.addEvent(element, "mousemove", function(e){
-                pos = Tools.getMousePoint(svg, e);
-                tooltip.setAttribute("visibility", "visible");
-                tooltip.setAttribute("transform", "translate(" + (pos.x + 10) + "," + (pos.y - tooltipSize.height) + ")");
-                tooltipContent.textContent = "x: " + texts[index].item + " y: " + texts[index].d;
-            });
-            
-            Tools.addEvent(element, "mouseout", function(e){
-                tooltip.setAttribute("visibility", "hidden");
-                tooltipContent.textContent = "";
-            });
-        }
-        
         points.forEach(pointEvent);
+    }
+        
+    pointEvent = function(element, index, array) {
+        Tools.addEvent(element, "mousemove", function(e){
+            pos = Tools.getMousePoint(svg, e);
+            tooltip.setAttribute("visibility", "visible");
+            tooltip.setAttribute("transform", "translate(" + (pos.x + 10) + "," + (pos.y - tooltipSize.height) + ")");
+            tooltipContent.textContent = "x: " + texts[index].item + " y: " + texts[index].d;
+        });
+        
+        Tools.addEvent(element, "mouseout", function(e){
+            tooltip.setAttribute("visibility", "hidden");
+            tooltipContent.textContent = "";
+        });
     }
     
     this.newData = function(x){
