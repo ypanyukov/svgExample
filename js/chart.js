@@ -43,8 +43,8 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     
     drawLine: function(x0, y0, x1, y1, strokeWidth, strokeColor, className){
         var className = !className ? "" : className,
-            d = "M " + x0 + " " + y0 + " L " + x1 + " " + y1;
-        var params = {
+            d = "M " + x0 + " " + y0 + " L " + x1 + " " + y1,
+            params = {
             fill: "none",
             d: d,
             stroke: strokeColor,
@@ -55,8 +55,8 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     },
     
     drawCircle: function(x, y, r, stroke, fill, className){
-        className = !className ? "" : className;
-        var params = {
+        var className = !className ? "" : className,
+            params = {
             cx: x,
             cy: y,
             r: r,
@@ -65,35 +65,38 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
             fill: fill
         }
         return this.drawElement("circle", params);
+    },
+    
+    drawSquare: function(x, y, w, stroke, fill, className){
+        var className = !className ? "" : className,
+            d = "M " + (x - w/2) + " " + (y - w/2) + " L " + (x + w/2) + " " + (y - w/2) + " " + (x + w/2) + " " + (y + w/2) + " " + (x - w/2) + " " + (y + w/2) + " Z",
+            params = {
+                d: d,
+                stroke: stroke,
+                "class": className,
+                fill: fill
+            }
+            
+        return this.drawElement("path", params);
     }
 }
 
-
-
 Chart = function(selector, data, type, config){
     var svg, // svg node
-        parentElement,
-        dataX = [],
-        dataY = [],
-        preventData = data, //temp variable
-        dataMin,
-        dataMax,
+        _data = {x:[], y:[], min:0, max:0},
         defaultRandomDataCount = 20,
         params = {},
         //configs
-        xStep = 40,
-        yStep,
+        config,
+        steps = { x: 40, y: 0},
         circleRadius = 5,
+        squareWidth = 10,
         defaultCircleColor = "#419CEB",
         defaultLineColor = "#000",
         whiteColor = "rgba(255, 255, 255, 1)",
         miminSVGWidth = 1000,
         minSVGsHeight = 400,
-        axisLineY = 8,
-        axisLineX = 12,
-        at,
-        area,
-        grid,
+        axisLine = {x:12, y:8},
         //configs
         //tooltip config
         tooltip,
@@ -107,8 +110,8 @@ Chart = function(selector, data, type, config){
         defaultAnimateAction = 100,
         texts = [];
     
-    init = function(){ //init function create  svg node object
-        console.log("Start");
+    this.init = function(){ //init function create  svg node object
+        var parentElement;
         
         if (!document.querySelector) //https://developer.mozilla.org/ru/docs/DOM/Document.querySelector only msie version < 8 will suffer 
             return false;
@@ -126,64 +129,75 @@ Chart = function(selector, data, type, config){
         svg = SVGTools.drawElement("svg", params);
                 
         parentElement.appendChild(svg);
+
+        console.log("Start. Draw in " + parentElement.id); 
     }
     
     this.draw = function(){
-        if (typeof preventData != "object" || preventData.t == "random"){
+        var preventData = data; //temp variable
+        if (typeof preventData != "object" || preventData.t == "random"){ //if data == "random" or special object with t:"random"
             defaultRandomDataCount = !preventData.c ? defaultRandomDataCount : preventData.c;
-            data = this.getRandomData(defaultRandomDataCount);
+            _data = this.getRandomData(defaultRandomDataCount);
         }
         
-        dataY = data.y ? data.y : data;
-        if (!data.x){
-            for(var r = 0; r < dataY.length; r++)
-                dataX.push(r);
+        _data.y = data.y ? data.y : data;
+        if (data.x.length == 0){
+            for(var r = 0; r < _data.y.length; r++)
+                _data.x.push(r);
         }
         else
-            dataX = data.x;
+            _data.x = data.x;
         
-        dataMin = Math.min.apply(Math, dataY); //a simple solution dataY[0] if u use dataY.sort() variable
-        dataMax = Math.max.apply(Math, dataY); //a simple solution dataY[dataY.length - 1] if u use dataY.sort() variable
-                
+        _data.min = Math.min.apply(Math, _data.y); //a simple solution _data.y[0] if u use _data.y.sort() variable
+        _data.max = Math.max.apply(Math, _data.y); //a simple solution _data.y[_data.y.length - 1] if u use _data.y.sort() variable
+        
         config = (!config) ? { height:minSVGsHeight, width:miminSVGWidth } : config;
         config.height = (!config.height || config.height < minSVGsHeight) ? minSVGsHeight : config.height;
         config.width = (!config.width || config.width < miminSVGWidth) ? miminSVGWidth : config.width;
-        config.width = dataY.length * xStep > config.width - 150 ? dataY.length * xStep + 150 : config.width;
-        this.config = config;
         
-        intersectionOfAxes = {x: 50, y: config.height - 50};
-        pointShape = {minX: 50, maxX: config.width - 50, minY: config.height - 50, maxY: 50};        
+        intersectionOfAxes = {x: 50, y: config.height - 50}; //0, 0
+        pointShape = {minX: 50, maxX: config.width - 50, minY: config.height - 50, maxY: 50}; //when i draw
         
-        xStep = parseInt((pointShape.maxX - pointShape.minX) / dataY.length) < 40 ? 40 : parseInt((pointShape.maxX - pointShape.minX) / dataY.length);        
-        yStep = (pointShape.minY - pointShape.maxY) / (dataMax - dataMin);
+        steps.x = parseInt((pointShape.maxX - pointShape.minX) / _data.y.length) < steps.x ? steps.x : parseInt((pointShape.maxX - pointShape.minX) / _data.y.length);        
+        steps.y = (pointShape.minY - pointShape.maxY) / (_data.max - _data.min);        
+        
+        config.width = _data.y.length * steps.x > config.width - 150 ? _data.y.length * steps.x + 150 : config.width;
+        config.type = type;
+        this.config = config; //if it is need for read in View
         
         if (!svg)
-            init();
+            this.init();
             
         this.drawArea();
         this.drawAxis();
         this.drawGrid();
         this.drawData();
         this.drawTooltip();
+
+        console.log("Finish");
     }
     
-    this.drawGrid = function(){
+    this.drawGrid = function(){ //draw grid in pointShape and labels
         var line,
-            text;
+            text,
+            at,
+            grid,
+            stepForAxis,
+            stepTextY;
             
         params = { transform: "translate(0, 0)" };
         grid = SVGTools.drawElement("g", params);
         svg.appendChild(grid);
         
-        axisLineX = dataY.length > 10 ? dataY.length < 20 ? dataY.length : parseInt(dataY.length / 2) : axisLineX;
+        axisLine.x = _data.y.length > 10 ? _data.y.length < 20 ? _data.y.length : parseInt(_data.y.length / 2) : axisLine.x;
         
         stepForAxis = {}
-        stepForAxis.Y = (pointShape.minY - pointShape.maxY) / axisLineY;
-        stepForAxis.X = (pointShape.maxX - pointShape.minX) / axisLineX;
+        stepForAxis.Y = (pointShape.minY - pointShape.maxY) / axisLine.y;
+        stepForAxis.X = (pointShape.maxX - pointShape.minX) / axisLine.x;
         
-        stepTextY = parseFloat((dataMax - dataMin) / axisLineY);
+        stepTextY = parseFloat((_data.max - _data.min) / axisLine.y);
         
-        for (var f = 0; f <= axisLineY; f++){
+        for (var f = 0; f <= axisLine.y; f++){
             params = {
                 x: intersectionOfAxes.x - 30,
                 y: intersectionOfAxes.y + 10 - f * stepForAxis.Y,
@@ -196,21 +210,23 @@ Chart = function(selector, data, type, config){
             
             params = { };
             at = SVGTools.drawElement("tspan", params);
-            at.textContent = dataMin + f * stepTextY;
+            at.textContent = _data.min + f * stepTextY;
             text.appendChild(at);
             
             line = SVGTools.drawLine(intersectionOfAxes.x - 10, intersectionOfAxes.y - f * stepForAxis.Y, config.width - 50, intersectionOfAxes.y - f * stepForAxis.Y, 0.1, defaultLineColor, "grid");
             grid.appendChild(line);
         }
         
-        for (var f = 0; f <= axisLineX; f++){            
+        for (var f = 0; f <= axisLine.x; f++){            
             line = SVGTools.drawLine(intersectionOfAxes.x + f * stepForAxis.X, intersectionOfAxes.y + 10, intersectionOfAxes.x + f * stepForAxis.X, 50, 0.1, defaultLineColor, "grid");
             grid.appendChild(line);
         }
         
     }    
     
-    this.drawArea = function(){
+    this.drawArea = function(){ //draw "whiteColor" area for drawall objects
+        var area;
+
         params = {
             rx: 5,
             ry: 5,
@@ -224,7 +240,7 @@ Chart = function(selector, data, type, config){
         svg.appendChild(area);
     }
     
-    this.drawAxis = function(){
+    this.drawAxis = function(){ //draw axis
         var lineX,
             lineY;
         
@@ -234,7 +250,7 @@ Chart = function(selector, data, type, config){
         svg.appendChild(lineX);
     }
     
-    this.drawTooltip = function(){
+    this.drawTooltip = function(){ //draw tooltip
         var text,
             tooltipRect;
         
@@ -273,34 +289,46 @@ Chart = function(selector, data, type, config){
         text.appendChild(tooltipContent);
     }
     
-    this.drawData = function(){
-        var x, y;
+    this.drawData = function(){ //draw points
+        var x, y, point;
         
         params = { transform: "translate(0, 0)" };
         dataGrid = SVGTools.drawElement("g", params);
         svg.appendChild(dataGrid);
         
-        for (var d in dataY){
-            var item = dataY[d];
-            y = pointShape.minY - (item - dataMin) * yStep;
-            x = d * xStep + pointShape.minX;
-            var point = SVGTools.drawCircle(x, y, circleRadius, defaultCircleColor, defaultCircleColor, "point");            
+        for (var d in _data.y){
+            var item = _data.y[d];
+            y = pointShape.minY - (item - _data.min) * steps.y;
+            x = d * steps.x + pointShape.minX;
+            
+            if (config.type == "square")
+                point = SVGTools.drawSquare(x, y, squareWidth, defaultCircleColor, defaultCircleColor, "point square");             
+            else
+                point = SVGTools.drawCircle(x, y, circleRadius, defaultCircleColor, defaultCircleColor, "point circle");
+            
             points.push(point);
-            texts.push({item: item, d: dataX[d]});
+            texts.push({item: item, d: _data.x[d]});
             dataGrid.appendChild(point);
         }
         
         points.forEach(pointEvent);
     }
     
-    this.newData = function(x){
-        dataY.push(x);
-        var d = dataY.length - 1;
+    this.newData = function(x){ 
+        var point;
+        
+        _data.y.push(x);
+        var d = _data.y.length - 1;
         
         item = x;
-        y = pointShape.minY - (item - dataMin) * yStep;
-        x = d * xStep + pointShape.minX;
-        var point = SVGTools.drawCircle(x, y, circleRadius, defaultCircleColor, defaultCircleColor, "point");
+        y = pointShape.minY - (item - _data.min) * steps.y;
+        x = d * steps.x + pointShape.minX;        
+            
+        if (config.type == "square")
+            point = SVGTools.drawSquare(x, y, squareWidth, defaultCircleColor, defaultCircleColor, "point square");            
+        else
+            point = SVGTools.drawCircle(x, y, circleRadius, defaultCircleColor, defaultCircleColor, "point circle");
+            
         points.push(point);
         texts.push({item: item, d: d});
         dataGrid.appendChild(point);
@@ -314,7 +342,7 @@ Chart = function(selector, data, type, config){
                 points.forEach(pointEvent);
             }
             oldX = dataGrid.transform.baseVal.getItem(0).matrix.e;
-            newTransformX = oldX - xStep / defaultAnimateAction;
+            newTransformX = oldX - steps.x / defaultAnimateAction;
             dataGrid.transform.baseVal.getItem(0).setTranslate(newTransformX, 0);
             if (++c == defaultAnimateAction){
                 clearInterval(inter);
@@ -341,14 +369,14 @@ Chart = function(selector, data, type, config){
         var rX;
         
         count = (!count) ? 10 : count;
-        data = [];
+        data = _data;
         
         for (var i = 0; i < count; i++){
             rX = parseInt(Math.random() * 10000);
-            data.push(rX);
+            data.y.push(rX);
         }
         
-        return {y:data};
+        return data;
     }
     
     this.draw();
