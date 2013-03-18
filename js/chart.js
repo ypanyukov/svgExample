@@ -213,12 +213,12 @@ Chart = function(selector, data, type, config){
             at.textContent = _data.min + f * stepTextY;
             text.appendChild(at);
             
-            line = SVGTools.drawLine(intersectionOfAxes.x - 10, intersectionOfAxes.y - f * stepForAxis.Y, config.width - 50, intersectionOfAxes.y - f * stepForAxis.Y, 0.1, defaultLineColor, "grid");
+            line = SVGTools.drawLine(intersectionOfAxes.x - 10, intersectionOfAxes.y - f * stepForAxis.Y, config.width - 50, intersectionOfAxes.y - f * stepForAxis.Y, 0.2, defaultLineColor, "grid");
             grid.appendChild(line);
         }
         
         for (var f = 0; f <= axisLine.x; f++){            
-            line = SVGTools.drawLine(intersectionOfAxes.x + f * stepForAxis.X, intersectionOfAxes.y + 10, intersectionOfAxes.x + f * stepForAxis.X, 50, 0.1, defaultLineColor, "grid");
+            line = SVGTools.drawLine(intersectionOfAxes.x + f * stepForAxis.X, intersectionOfAxes.y + 10, intersectionOfAxes.x + f * stepForAxis.X, 50, 0.2, defaultLineColor, "grid");
             grid.appendChild(line);
         }
         
