@@ -8,8 +8,8 @@ Tools = { //small class for work with events
     
     ready: function(callback){ //$(document).ready
         if (document.attachEvent){
-            document.attachEvent('DOMContentLoaded', callback);
-            document.attachEvent('onready', callback);
+            document.attachEvent('onreadystatechange', callback);
+            document.attachEvent('onload', callback);
         }
         else{
             document.addEventListener('DOMContentLoaded', callback);
@@ -38,7 +38,7 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
             val = params[p];
             element.setAttribute(p, val);
         }
-        return element;        
+        return element;
     },
     
     drawLine: function(x0, y0, x1, y1, strokeWidth, strokeColor, className){
@@ -117,6 +117,7 @@ Chart = function(selector, data, type, config){
             return false;
         
         parentElement = document.querySelector(selector); //only :first-child element
+        console.log(parentElement);
         if(!parentElement)
             return false;
         
@@ -155,13 +156,13 @@ Chart = function(selector, data, type, config){
         config.height = (!config.height || config.height < minSVGsHeight) ? minSVGsHeight : config.height;
         config.width = (!config.width || config.width < miminSVGWidth) ? miminSVGWidth : config.width;
         
+        config.width = _data.y.length * steps.x > config.width - 150 ? _data.y.length * steps.x + 150 : config.width;
+        
         intersectionOfAxes = {x: 50, y: config.height - 50}; //0, 0
         pointShape = {minX: 50, maxX: config.width - 50, minY: config.height - 50, maxY: 50}; //when i draw
         
         steps.x = parseInt((pointShape.maxX - pointShape.minX) / _data.y.length) < steps.x ? steps.x : parseInt((pointShape.maxX - pointShape.minX) / _data.y.length);        
-        steps.y = (pointShape.minY - pointShape.maxY) / (_data.max - _data.min);        
-        
-        config.width = _data.y.length * steps.x > config.width - 150 ? _data.y.length * steps.x + 150 : config.width;
+        steps.y = (pointShape.minY - pointShape.maxY) / (_data.max - _data.min);
         config.type = type;
         this.config = config; //if it is need for read in View
         
@@ -315,14 +316,14 @@ Chart = function(selector, data, type, config){
     }
     
     this.newData = function(x){ 
-        var point;
+        var y, point;
         
         _data.y.push(x);
         var d = _data.y.length - 1;
         
-        item = x;
-        y = pointShape.minY - (item - _data.min) * steps.y;
-        x = d * steps.x + pointShape.minX;        
+        _item = x;
+        y = pointShape.minY - (_item - _data.min) * steps.y;
+        x = d * steps.x + pointShape.minX;
             
         if (config.type == "square")
             point = SVGTools.drawSquare(x, y, squareWidth, defaultCircleColor, defaultCircleColor, "point square");            
@@ -330,7 +331,7 @@ Chart = function(selector, data, type, config){
             point = SVGTools.drawCircle(x, y, circleRadius, defaultCircleColor, defaultCircleColor, "point circle");
             
         points.push(point);
-        texts.push({item: item, d: d});
+        texts.push({item: _item, d: d});
         dataGrid.appendChild(point);
         
         var c = 0;
