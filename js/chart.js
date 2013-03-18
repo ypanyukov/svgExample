@@ -117,7 +117,7 @@ Chart = function(selector, data, type, config){
             return false;
         
         parentElement = document.querySelector(selector); //only :first-child element
-        console.log(parentElement);
+        
         if(!parentElement)
             return false;
         
