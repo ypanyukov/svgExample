@@ -83,6 +83,7 @@ var SVGTools = { //SVGTools - a helper object for creating SVG's object
 
 var Chart = function(selector, data, type, config){
     var svg, // svg node
+        _chart,
         _data = {x:[], y:[], min:0, max:0},
         defaultRandomDataCount = 20,
         intersectionOfAxes,
@@ -111,7 +112,10 @@ var Chart = function(selector, data, type, config){
         defaultAnimateAction = 100,
         texts = [];
     
-    this.init = function(){ //init function create  svg node object
+    
+    _chart = this;
+    
+    var init = function(){ //init function create  svg node object
         var parentElement;
         
         if (!document.querySelector) //https://developer.mozilla.org/ru/docs/DOM/Document.querySelector only msie version < 8 will suffer 
@@ -135,11 +139,11 @@ var Chart = function(selector, data, type, config){
         console.log("Start. Draw in " + parentElement.id); 
     }
     
-    this.draw = function(){
+    var draw = function(){
         var preventData = data; //temp variable
         if (typeof preventData != "object" || preventData.t == "random"){ //if data == "random" or special object with t:"random"
             defaultRandomDataCount = !preventData.c ? defaultRandomDataCount : preventData.c;
-            _data = this.getRandomData(defaultRandomDataCount);
+            _data = _chart.getRandomData(defaultRandomDataCount);
         }
         
         _data.y = data.y ? data.y : data;
@@ -165,21 +169,21 @@ var Chart = function(selector, data, type, config){
         steps.x = parseInt((pointShape.maxX - pointShape.minX) / _data.y.length) < steps.x ? steps.x : parseInt((pointShape.maxX - pointShape.minX) / _data.y.length);        
         steps.y = (pointShape.minY - pointShape.maxY) / (_data.max - _data.min);
         config.type = type;
-        this.config = config; //if it is need for read in View
+        _chart.config = config; //if it is need for read in View
         
         if (!svg)
-            this.init();
+            init();
             
-        this.drawArea();
-        this.drawAxis();
-        this.drawGrid();
-        this.drawData();
-        this.drawTooltip();
+        drawArea();
+        drawAxis();
+        drawGrid();
+        drawData();
+        drawTooltip();
 
         console.log("Finish");
     }
     
-    this.drawGrid = function(){ //draw grid in pointShape and labels
+    var drawGrid = function(){ //draw grid in pointShape and labels
         var line,
             text,
             at,
@@ -226,7 +230,7 @@ var Chart = function(selector, data, type, config){
         
     }    
     
-    this.drawArea = function(){ //draw "whiteColor" area for drawall objects
+    var drawArea = function(){ //draw "whiteColor" area for drawall objects
         var area;
 
         params = {
@@ -242,7 +246,7 @@ var Chart = function(selector, data, type, config){
         svg.appendChild(area);
     }
     
-    this.drawAxis = function(){ //draw axis
+    var drawAxis = function(){ //draw axis
         var lineX,
             lineY;
         
@@ -252,7 +256,7 @@ var Chart = function(selector, data, type, config){
         svg.appendChild(lineX);
     }
     
-    this.drawTooltip = function(){ //draw tooltip
+    var drawTooltip = function(){ //draw tooltip
         var text,
             tooltipRect;
         
@@ -291,7 +295,7 @@ var Chart = function(selector, data, type, config){
         text.appendChild(tooltipContent);
     }
     
-    this.drawData = function(){ //draw points
+    var drawData = function(){ //draw points
         var x, y, point;
         
         params = { transform: "translate(0, 0)" };
@@ -353,7 +357,7 @@ var Chart = function(selector, data, type, config){
         }, 10);
     }
         
-    pointEvent = function(element, index, array) {
+    var pointEvent = function(element, index, array) {
         var pos;
         
         Tools.addEvent(element, "mousemove", function(e){
@@ -383,7 +387,7 @@ var Chart = function(selector, data, type, config){
         return data;
     }
     
-    this.draw();
+    draw();
     
     this.chart = 0.1;
 }

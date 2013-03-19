@@ -1,12 +1,14 @@
+var chart, randomChart, randomChartAdd;
+
 Tools.ready(function(){
     
     var data = {};
     data.y = [2,6,0,5,8,2,10,1];
     data.x = ["Moscow", "Tula", "Nicosia", "Limassol", "Bangkok", "Kiev", "Kishinev", "Tokio", "Sidney"];
     
-    var chart = new Chart("#chart", data, "circle", {height:500, width:500}); //create Chart object
-    var randomChart = new Chart("#randomChart", "random", "square", {height:500, width:500}); //create Chart object
-    var randomChartAdd = new Chart("#randomChartAdd", {t: "random", c: 30}, "circle", {height:500, width:500}); //create Chart object
+    chart = new Chart("#chart", data, "circle", {height:500, width:500}); //create Chart object
+    randomChart = new Chart("#randomChart", "random", "square", {height:500, width:500}); //create Chart object
+    randomChartAdd = new Chart("#randomChartAdd", {t: "random", c: 30}, "circle", {height:500, width:500}); //create Chart object
    
     var interval = setInterval(function(){
        var newX = parseInt(Math.random() * 10000); 
