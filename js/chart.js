@@ -1,4 +1,4 @@
-Tools = { //small class for work with events
+var Tools = { //small class for work with events
     addEvent: function(element, type, callback){
         if (element.attachEvent)
             element.attachEvent('on' + type, callback);
@@ -18,7 +18,7 @@ Tools = { //small class for work with events
     },
     
     getMousePoint: function(element, event){ //mouse point on the element
-        var event = event  || window.event;
+        event = event  || window.event;
         
         if (event.clientX)
             return {x: event.clientX - element.getBoundingClientRect().left, y: event.clientY - element.getBoundingClientRect().top}            
@@ -27,7 +27,7 @@ Tools = { //small class for work with events
     }
 }
 
-SVGTools = { //SVGTools - a helper object for creating SVG's object
+var SVGTools = { //SVGTools - a helper object for creating SVG's object
     svgNS: 'http://www.w3.org/2000/svg', //uses namespace
     
     drawElement: function(selector, params){ //main method SBGTools's object
@@ -42,8 +42,8 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     },
     
     drawLine: function(x0, y0, x1, y1, strokeWidth, strokeColor, className){
-        var className = !className ? "" : className,
-            d = "M " + x0 + " " + y0 + " L " + x1 + " " + y1,
+        className = !className ? "" : className
+        var d = "M " + x0 + " " + y0 + " L " + x1 + " " + y1,
             params = {
             fill: "none",
             d: d,
@@ -55,8 +55,8 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     },
     
     drawCircle: function(x, y, r, stroke, fill, className){
-        var className = !className ? "" : className,
-            params = {
+        className = !className ? "" : className;
+        var params = {
             cx: x,
             cy: y,
             r: r,
@@ -68,8 +68,8 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     },
     
     drawSquare: function(x, y, w, stroke, fill, className){
-        var className = !className ? "" : className,
-            d = "M " + (x - w/2) + " " + (y - w/2) + " L " + (x + w/2) + " " + (y - w/2) + " " + (x + w/2) + " " + (y + w/2) + " " + (x - w/2) + " " + (y + w/2) + " Z",
+        className = !className ? "" : className;
+        var d = "M " + (x - w/2) + " " + (y - w/2) + " L " + (x + w/2) + " " + (y - w/2) + " " + (x + w/2) + " " + (y + w/2) + " " + (x - w/2) + " " + (y + w/2) + " Z",
             params = {
                 d: d,
                 stroke: stroke,
@@ -81,13 +81,14 @@ SVGTools = { //SVGTools - a helper object for creating SVG's object
     }
 }
 
-Chart = function(selector, data, type, config){
+var Chart = function(selector, data, type, config){
     var svg, // svg node
         _data = {x:[], y:[], min:0, max:0},
         defaultRandomDataCount = 20,
+        intersectionOfAxes,
+        pointShape,
         params = {},
         //configs
-        config,
         steps = { x: 40, y: 0},
         circleRadius = 5,
         squareWidth = 10,
@@ -142,7 +143,7 @@ Chart = function(selector, data, type, config){
         }
         
         _data.y = data.y ? data.y : data;
-        if (data.x.length == 0){
+        if (data.x.length === 0){
             for(var r = 0; r < _data.y.length; r++)
                 _data.x.push(r);
         }
@@ -218,7 +219,7 @@ Chart = function(selector, data, type, config){
             grid.appendChild(line);
         }
         
-        for (var f = 0; f <= axisLine.x; f++){            
+        for (f = 0; f <= axisLine.x; f++){            
             line = SVGTools.drawLine(intersectionOfAxes.x + f * stepForAxis.X, intersectionOfAxes.y + 10, intersectionOfAxes.x + f * stepForAxis.X, 50, 0.2, defaultLineColor, "grid");
             grid.appendChild(line);
         }
@@ -316,7 +317,7 @@ Chart = function(selector, data, type, config){
     }
     
     this.newData = function(x){ 
-        var y, point;
+        var y, point, removeElement, _item, oldX, newTransformX;
         
         _data.y.push(x);
         var d = _data.y.length - 1;
@@ -353,6 +354,8 @@ Chart = function(selector, data, type, config){
     }
         
     pointEvent = function(element, index, array) {
+        var pos;
+        
         Tools.addEvent(element, "mousemove", function(e){
             pos = Tools.getMousePoint(svg, e);
             tooltip.setAttribute("visibility", "visible");
