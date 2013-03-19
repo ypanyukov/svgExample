@@ -337,7 +337,7 @@ var Chart = function(selector, data, type, config){
         
         var c = 0;
         var inter = setInterval(function(){
-            if (c == 0){
+            if (c === 0){
                 removeElement = points.shift();
                 removeElement.parentNode.removeChild(removeElement);
                 texts.shift();                
