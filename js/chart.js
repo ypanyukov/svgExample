@@ -7,14 +7,14 @@ var Tools = { //small class for work with events
     },
     
     ready: function(callback){ //$(document).ready
-        if (document.attachEvent){
-            document.attachEvent('onreadystatechange', callback);
-            document.attachEvent('onload', callback);
+        if (document.readyState != "complete"){
+            setTimeout(function() {
+                Tools.ready(callback);
+            }, 1);
+            return;
         }
-        else{
-            document.addEventListener('DOMContentLoaded', callback);
-            document.addEventListener('ready', callback);
-        }
+        
+        callback.call();
     },
     
     getMousePoint: function(element, event){ //mouse point on the element
